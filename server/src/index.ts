@@ -1,8 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
 import createTables from './db/migrate';
 import seedDatabase from './db/seed';
+
 import authRoutes from './routes/auth';
 import collegeRoutes from './routes/colleges';
 import savedRoutes from './routes/saved';
@@ -12,15 +14,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(
-  cors({
-    origin: [
-      'http://localhost:3000',
-      'https://college-discovery-platform-jdx4.vercel.app',
-    ],
-    credentials: true,
-  })
-);
+// FIXED CORS
+app.use(cors({
+  origin: true,
+  credentials: true,
+}));
 
 app.use(express.json());
 
@@ -31,7 +29,10 @@ app.use('/api/saved', savedRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 const start = async () => {
@@ -43,12 +44,11 @@ const start = async () => {
 
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false,
-      },
     });
 
-    const count = await pool.query('SELECT COUNT(*) FROM colleges');
+    const count = await pool.query(
+      'SELECT COUNT(*) FROM colleges'
+    );
 
     if (parseInt(count.rows[0].count) === 0) {
       console.log('🌱 Seeding database...');
@@ -60,6 +60,7 @@ const start = async () => {
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
+
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
